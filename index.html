@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Regional Happiness Score vs. GDP Ranking Index</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+  :root {
+    --bg: #ffffff;
+    --panel: #f8fafc;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --muted: #475569;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 22px 28px;
+    line-height: 1.4;
+  }
+  .container {
+    max-width: 1240px;
+    margin: 0 auto;
+  }
+  header {
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  h1 {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+  }
+  .top-note {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    align-items: center;
+    font-size: 12.5px;
+    color: var(--text);
+  }
+  .note-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .seg-line {
+    display: inline-block;
+    width: 18px;
+    height: 3.5px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .chart-card {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+  }
+  #chart {
+    width: 100%;
+    height: 540px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h1>Regional Happiness Score vs. GDP Ranking Index</h1>
+    </div>
+    <div class="top-note">
+      <span class="note-item"><i class="dot" style="background:#24cc94"></i><strong>Regional Happiness Score</strong></span>
+      <span class="note-item"><i class="dot" style="background:#b94d4d"></i><strong>GDP Ranking Index</strong></span>
+      <span class="note-item"><i class="seg-line" style="background:#39ba8a"></i><strong>Green line:</strong> Happiness Score &gt; GDP Ranking Index</span>
+      <span class="note-item"><i class="seg-line" style="background:#c96a6a"></i><strong>Red line:</strong> Happiness Score &lt; GDP Ranking Index</span>
+    </div>
+  </header>
+
+  <div class="chart-card">
+    <div id="chart"></div>
+  </div>
+</div>
+
+<script>
+const ROWS_DESC = [{"region": "North America & ANZ", "gdp": 8.846, "happiness": 6.867, "gap": -1.979}, {"region": "Western Europe", "gdp": 9.017, "happiness": 6.845, "gap": -2.172}, {"region": "Latin America & Caribbean", "gdp": 4.995, "happiness": 6.354, "gap": 1.359}, {"region": "Central & Eastern Europe", "gdp": 6.808, "happiness": 6.236, "gap": -0.572}, {"region": "East Asia", "gdp": 6.308, "happiness": 6.077, "gap": -0.231}, {"region": "Commonwealth of Independent States", "gdp": 4.906, "happiness": 5.811, "gap": 0.905}, {"region": "Southeast Asia", "gdp": 3.962, "happiness": 5.711, "gap": 1.749}, {"region": "Middle East & North Africa", "gdp": 5.78, "happiness": 5.37, "gap": -0.41}, {"region": "Sub-Saharan Africa", "gdp": 1.71, "happiness": 4.414, "gap": 2.704}, {"region": "South Asia", "gdp": 2.862, "happiness": 4.055, "gap": 1.193}];
+// Reverse so highest happiness is at the top of the horizontal chart
+const orderedRows = [...ROWS_DESC].reverse();
+const yLabels = orderedRows.map(r => r.region);
+
+function formatGap(g) {
+  return (g >= 0 ? "+" : "") + g.toFixed(3);
+}
+
+const traces = [];
+
+orderedRows.forEach((r, idx) => {
+  const lineColor = r.gap >= 0 ? "#39ba8a" : "#c96a6a";
+  traces.push({
+    type: "scatter",
+    mode: "lines",
+    x: [r.gdp, r.happiness],
+    y: [r.region, r.region],
+    line: { color: lineColor, width: 3.5 },
+    hoverinfo: "skip",
+    showlegend: idx === 0,
+    name: "Score Gap"
+  });
+});
+
+traces.push({
+  type: "scatter",
+  mode: "markers+text",
+  name: "GDP Ranking Index",
+  x: orderedRows.map(r => r.gdp),
+  y: yLabels,
+  text: orderedRows.map(r => r.gdp.toFixed(3)),
+  textposition: orderedRows.map(r => r.gdp <= r.happiness ? "bottom center" : "top center"),
+  textfont: { size: 11, color: "#991b1b" },
+  marker: {
+    color: "#b94d4d",
+    size: 12,
+    line: { color: "#ffffff", width: 1.5 }
+  },
+  customdata: orderedRows.map(r => [r.happiness.toFixed(3), formatGap(r.gap)]),
+  hovertemplate:
+    "<b>%{y}</b><br>" +
+    "GDP Ranking Index: <b>%{x:.3f}</b><br>" +
+    "Regional Happiness: %{customdata[0]}<br>" +
+    "Gap (Hap − GDP): <b>%{customdata[1]}</b>" +
+    "<extra></extra>"
+});
+
+traces.push({
+  type: "scatter",
+  mode: "markers+text",
+  name: "Regional Happiness Score",
+  x: orderedRows.map(r => r.happiness),
+  y: yLabels,
+  text: orderedRows.map(r => r.happiness.toFixed(3)),
+  textposition: orderedRows.map(r => r.happiness >= r.gdp ? "top center" : "bottom center"),
+  textfont: { size: 11, color: "#065f46" },
+  marker: {
+    color: "#24cc94",
+    size: 12,
+    line: { color: "#ffffff", width: 1.5 }
+  },
+  customdata: orderedRows.map(r => [r.gdp.toFixed(3), formatGap(r.gap)]),
+  hovertemplate:
+    "<b>%{y}</b><br>" +
+    "Regional Happiness: <b>%{x:.3f}</b><br>" +
+    "GDP Ranking Index: %{customdata[0]}<br>" +
+    "Gap (Hap − GDP): <b>%{customdata[1]}</b>" +
+    "<extra></extra>"
+});
+
+const layout = {
+  paper_bgcolor: "#ffffff",
+  plot_bgcolor: "#ffffff",
+  margin: { t: 18, r: 44, b: 54, l: 235 },
+  xaxis: {
+    title: { text: "Score / Index (0–10 scale)", font: { size: 12.5, color: "#334155" } },
+    range: [0, 10.2],
+    dtick: 1,
+    gridcolor: "#f1f5f9",
+    zeroline: false,
+    tickfont: { size: 11.5, color: "#475569" }
+  },
+  yaxis: {
+    type: "category",
+    categoryorder: "array",
+    categoryarray: yLabels,
+    automargin: true,
+    tickfont: { size: 12, color: "#1e293b" },
+    gridcolor: "#f8fafc"
+  },
+  showlegend: false,
+  hoverlabel: {
+    bgcolor: "#0f172a",
+    bordercolor: "#0f172a",
+    font: { color: "#ffffff", size: 12.5 }
+  }
+};
+
+const config = {
+  responsive: true,
+  displayModeBar: true,
+  modeBarButtonsToRemove: ["select2d", "lasso2d", "autoScale2d"],
+  displaylogo: false,
+  doubleClick: false
+};
+
+Plotly.newPlot("chart", traces, layout, config);
+</script>
+</body>
+</html>
